@@ -1,4 +1,4 @@
-module github.com/jschwinger233/perf
+module github.com/jschwinger233/perf-examples
 
 go 1.21.0
 
