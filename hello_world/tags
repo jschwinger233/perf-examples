@@ -1,0 +1,58 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_EXCMD	mixed	/number, pattern, mixed, or combineV2/
+!_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
+!_TAG_PROC_CWD	/home/liangzc/src/github.com/jschwinger233/perf/backtrace_with_args/	//
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	5.9.0	//
+BpfProg1	bpf_bpf.go	/^	BpfProg1 *ebpf.Program `ebpf:"bpf_prog1"`$/;"	m	struct:main.bpfPrograms	typeref:typename:*ebpf.Program
+BpfProg1	bpf_bpf.go	/^	BpfProg1 *ebpf.ProgramSpec `ebpf:"bpf_prog1"`$/;"	m	struct:main.bpfProgramSpecs	typeref:typename:*ebpf.ProgramSpec
+BpfProg1	test_bpf.go	/^	BpfProg1 *ebpf.Program `ebpf:"bpf_prog1"`$/;"	m	struct:main.TestPrograms	typeref:typename:*ebpf.Program
+BpfProg1	test_bpf.go	/^	BpfProg1 *ebpf.ProgramSpec `ebpf:"bpf_prog1"`$/;"	m	struct:main.TestProgramSpecs	typeref:typename:*ebpf.ProgramSpec
+Close	bpf_bpf.go	/^func (m *bpfMaps) Close() error {$/;"	f	struct:main.bpfMaps	typeref:typename:error
+Close	bpf_bpf.go	/^func (o *bpfObjects) Close() error {$/;"	f	struct:main.bpfObjects	typeref:typename:error
+Close	bpf_bpf.go	/^func (p *bpfPrograms) Close() error {$/;"	f	struct:main.bpfPrograms	typeref:typename:error
+Close	test_bpf.go	/^func (m *TestMaps) Close() error {$/;"	f	struct:main.TestMaps	typeref:typename:error
+Close	test_bpf.go	/^func (o *TestObjects) Close() error {$/;"	f	struct:main.TestObjects	typeref:typename:error
+Close	test_bpf.go	/^func (p *TestPrograms) Close() error {$/;"	f	struct:main.TestPrograms	typeref:typename:error
+LoadTest	test_bpf.go	/^func LoadTest() (*ebpf.CollectionSpec, error) {$/;"	f	package:main	typeref:typename:(*ebpf.CollectionSpec, error)
+LoadTestObjects	test_bpf.go	/^func LoadTestObjects(obj interface{}, opts *ebpf.CollectionOptions) error {$/;"	f	package:main	typeref:typename:error
+TestMapSpecs	test_bpf.go	/^	TestMapSpecs$/;"	M	struct:main.TestSpecs	typeref:typename:TestMapSpecs
+TestMapSpecs	test_bpf.go	/^type TestMapSpecs struct {$/;"	s	package:main
+TestMaps	test_bpf.go	/^	TestMaps$/;"	M	struct:main.TestObjects	typeref:typename:TestMaps
+TestMaps	test_bpf.go	/^type TestMaps struct {$/;"	s	package:main
+TestObjects	test_bpf.go	/^type TestObjects struct {$/;"	s	package:main
+TestProgramSpecs	test_bpf.go	/^	TestProgramSpecs$/;"	M	struct:main.TestSpecs	typeref:typename:TestProgramSpecs
+TestProgramSpecs	test_bpf.go	/^type TestProgramSpecs struct {$/;"	s	package:main
+TestPrograms	test_bpf.go	/^	TestPrograms$/;"	M	struct:main.TestObjects	typeref:typename:TestPrograms
+TestPrograms	test_bpf.go	/^type TestPrograms struct {$/;"	s	package:main
+TestSpecs	test_bpf.go	/^type TestSpecs struct {$/;"	s	package:main
+_BpfBytes	bpf_bpf.go	/^var _BpfBytes []byte$/;"	v	package:main	typeref:typename:[]byte
+_BpfClose	bpf_bpf.go	/^func _BpfClose(closers ...io.Closer) error {$/;"	f	package:main	typeref:typename:error
+_TestBytes	test_bpf.go	/^var _TestBytes []byte$/;"	v	package:main	typeref:typename:[]byte
+_TestClose	test_bpf.go	/^func _TestClose(closers ...io.Closer) error {$/;"	f	package:main	typeref:typename:error
+__license	bpf.c	/^char __license[] SEC("license") = "Dual MIT\/GPL";$/;"	v	typeref:typename:char[]SEC ("license")
+bpfMapSpecs	bpf_bpf.go	/^	bpfMapSpecs$/;"	M	struct:main.bpfSpecs	typeref:typename:bpfMapSpecs
+bpfMapSpecs	bpf_bpf.go	/^type bpfMapSpecs struct {$/;"	s	package:main
+bpfMaps	bpf_bpf.go	/^	bpfMaps$/;"	M	struct:main.bpfObjects	typeref:typename:bpfMaps
+bpfMaps	bpf_bpf.go	/^type bpfMaps struct {$/;"	s	package:main
+bpfObjects	bpf_bpf.go	/^type bpfObjects struct {$/;"	s	package:main
+bpfProgramSpecs	bpf_bpf.go	/^	bpfProgramSpecs$/;"	M	struct:main.bpfSpecs	typeref:typename:bpfProgramSpecs
+bpfProgramSpecs	bpf_bpf.go	/^type bpfProgramSpecs struct {$/;"	s	package:main
+bpfPrograms	bpf_bpf.go	/^	bpfPrograms$/;"	M	struct:main.bpfObjects	typeref:typename:bpfPrograms
+bpfPrograms	bpf_bpf.go	/^type bpfPrograms struct {$/;"	s	package:main
+bpfSpecs	bpf_bpf.go	/^type bpfSpecs struct {$/;"	s	package:main
+bpf_prog1	bpf.c	/^int bpf_prog1(struct bpf_perf_event_data *ctx)$/;"	f	typeref:typename:SEC ("perf_event")int
+fd	main.go	/^	fd int$/;"	m	struct:main.profile	typeref:typename:int
+loadBpf	bpf_bpf.go	/^func loadBpf() (*ebpf.CollectionSpec, error) {$/;"	f	package:main	typeref:typename:(*ebpf.CollectionSpec, error)
+loadBpfObjects	bpf_bpf.go	/^func loadBpfObjects(obj interface{}, opts *ebpf.CollectionOptions) error {$/;"	f	package:main	typeref:typename:error
+main	bpf_bpf.go	/^package main$/;"	p
+main	main.go	/^func main() {$/;"	f	package:main
+main	main.go	/^package main$/;"	p
+main	test_bpf.go	/^package main$/;"	p
+perf	main.go	/^	perf "github.com\/hodgesds\/perf-utils"$/;"	P	package:github.com/hodgesds/perf-utils
+profile	main.go	/^type profile struct {$/;"	s	package:main
