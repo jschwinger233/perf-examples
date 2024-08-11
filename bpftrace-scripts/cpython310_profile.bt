@@ -1,0 +1,76 @@
+struct PyTypeObject {
+    char _[24];
+    char *tp_name;
+}
+struct PyObject {
+    char _[8];
+    struct PyTypeObject *ob_type;
+}
+struct PyVarObject {
+    struct PyObject ob_base;
+    char _[8];
+}
+
+struct _PyStr {
+    char _[48];
+    char buf[48];
+}
+struct PyCodeObject {
+    char _[104];
+    struct _PyStr *co_filename;
+    struct _PyStr *co_name;
+}
+
+struct PyFrameObject {
+    struct PyVarObject ob_base;
+    struct PyFrameObject *f_back;
+    struct PyCodeObject *f_code;
+}
+
+profile:hz:99 /pid == $1/
+{
+    $frame = (struct PyFrameObject *)0;
+    if (str(((struct PyFrameObject *)reg("bx"))->ob_base.ob_base.ob_type->tp_name, 5) == "frame") {
+        $frame = (struct PyFrameObject *)reg("bx");
+    } else if (str(((struct PyFrameObject *)reg("di"))->ob_base.ob_base.ob_type->tp_name, 5) == "frame") {
+        $frame = (struct PyFrameObject *)reg("di");
+    } else if (str(((struct PyFrameObject *)reg("si"))->ob_base.ob_base.ob_type->tp_name, 5) == "frame") {
+        $frame = (struct PyFrameObject *)reg("si");
+    } else if (str(((struct PyFrameObject *)reg("dx"))->ob_base.ob_base.ob_type->tp_name, 5) == "frame") {
+        $frame = (struct PyFrameObject *)reg("dx");
+    } else if (str(((struct PyFrameObject *)reg("cx"))->ob_base.ob_base.ob_type->tp_name, 5) == "frame") {
+        $frame = (struct PyFrameObject *)reg("cx");
+    } else if (str(((struct PyFrameObject *)reg("r8"))->ob_base.ob_base.ob_type->tp_name, 5) == "frame") {
+        $frame = (struct PyFrameObject *)reg("r8");
+    } else if (str(((struct PyFrameObject *)reg("r9"))->ob_base.ob_base.ob_type->tp_name, 5) == "frame") {
+        $frame = (struct PyFrameObject *)reg("r9");
+    }
+
+    if ($frame == 0) {
+        $i = (uint64)0;
+        $sp = reg("sp");
+        while ($i <= 100) {
+            $frame = (struct PyFrameObject *)(*(uint64*)($sp + 8*$i));
+            if (str($frame->ob_base.ob_base.ob_type->tp_name, 5) == "frame") {
+                break;
+            }
+            $i += 1;
+            $frame = (struct PyFrameObject *)0;
+        }
+    }
+
+    if ($frame == 0) {
+        return;
+    }
+
+    printf("\n");
+    $i = 0;
+    while ($i < 20) {
+        printf("%s:%s\n", $frame->f_code->co_filename->buf, $frame->f_code->co_name->buf);
+        $i += 1;
+        $frame = $frame->f_back;
+        if ($frame == 0) {
+            return;
+        }
+    }
+}
