@@ -13,7 +13,7 @@ struct PyVarObject {
 
 struct _PyStr {
     char _[48];
-    char buf[48];
+    char buf[100];
 };
 struct PyCodeObject {
     char _[104];

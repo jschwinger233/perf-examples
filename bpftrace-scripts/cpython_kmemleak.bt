@@ -1,0 +1,37 @@
+tracepoint:kmem:mm_page_alloc /pid == $1/
+{
+    $task = (struct task_struct *)curtask;
+    $__ptr = (uint64)$task->stack;
+    $__ptr += THREAD_SIZE - TOP_OF_KERNEL_STACK_PADDING;
+    $pt_regs = ((struct pt_regs *)$__ptr) - 1;
+    $rsp = uptr($pt_regs->sp);
+    $rip = uptr($pt_regs->ip);
+
+    $frame = uptr((struct PyFrameObject *)0);
+
+    $i = (uint64)0;
+    while ($i <= 200) {
+        $frame = *uptr((struct PyFrameObject**)($rsp + 8*$i));
+        if (str($frame->ob_base.ob_base.ob_type->tp_name, 5) == "frame") {
+            break;
+        }
+        $frame = (struct PyFrameObject *)0;
+        $i += 1;
+    }
+
+    if ($frame == 0) {
+        printf("not found: %s, rsp=%llx rip=%llx\n", ustack, $rsp, $rip);
+        return;
+    }
+
+    printf("\n");
+    $i = 0;
+    while ($i < 20) {
+        printf("%s:%s\n", $frame->f_code->co_filename->buf, $frame->f_code->co_name->buf);
+        $i += 1;
+        $frame = $frame->f_back;
+        if ($frame == 0) {
+            return;
+        }
+    }
+}
