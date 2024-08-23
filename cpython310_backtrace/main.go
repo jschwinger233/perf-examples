@@ -9,7 +9,9 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"sort"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/cilium/ebpf"
@@ -17,8 +19,10 @@ import (
 	"github.com/elastic/go-perf"
 )
 
-type profile struct {
-	fd int
+type EventDigest struct {
+	PyStack string
+	User    bool
+	Rip     uint64
 }
 
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go -cc clang -no-strip -target bpf bpf ./bpf.c -- -I../bpf_headers -I. -Wall
@@ -73,11 +77,13 @@ func main() {
 		eventsReader.Close()
 	}()
 
+	digestStats := map[EventDigest]uint64{}
+
 	for {
 		rec, err := eventsReader.Read()
 		if err != nil {
 			if errors.Is(err, ringbuf.ErrClosed) {
-				return
+				break
 			}
 			log.Printf("Failed to read ringbuf: %+v", err)
 			continue
@@ -89,15 +95,35 @@ func main() {
 			continue
 		}
 
-		println()
-		if event.PythonStackDepth >= 0 {
-			for i := 0; i <= int(event.PythonStackDepth); i++ {
-				fmt.Printf("%s:%s\n",
-					string(event.Filename[i][:event.FilenameLen[i]]),
-					string(event.Funcname[i][:event.FuncnameLen[i]]))
-			}
-		} else {
-			fmt.Printf("0x%x\n", event.Rip)
+		eventDigest := EventDigest{
+			User: event.UserMode == 1,
+			Rip:  event.Rip,
 		}
+
+		if event.PythonStackDepth >= 0 {
+			stackframes := []string{}
+			for i := 0; i <= int(event.PythonStackDepth); i++ {
+				stackframes = append(stackframes, fmt.Sprintf("%s:%s",
+					string(event.Filename[i][:event.FilenameLen[i]]),
+					string(event.Funcname[i][:event.FuncnameLen[i]])))
+			}
+			eventDigest.PyStack = strings.Join(stackframes, "\n")
+		}
+
+		digestStats[eventDigest]++
 	}
+
+	digests := []EventDigest{}
+	for digest := range digestStats {
+		digests = append(digests, digest)
+	}
+
+	sort.Slice(digests, func(i, j int) bool {
+		return digestStats[digests[i]] < digestStats[digests[j]]
+	})
+
+	for _, digest := range digests {
+		fmt.Printf("%+v: %d\n\n", digest, digestStats[digest])
+	}
+
 }
