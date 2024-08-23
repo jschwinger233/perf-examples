@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"encoding/binary"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -9,8 +12,9 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/cilium/ebpf"
+	"github.com/cilium/ebpf/ringbuf"
 	"github.com/elastic/go-perf"
-	"golang.org/x/sys/unix"
 )
 
 type profile struct {
@@ -26,7 +30,15 @@ func main() {
 
 	obj := &bpfObjects{}
 	if err := loadBpfObjects(obj, nil); err != nil {
-		log.Fatalf("failed to load bpf objects: %v", err)
+		var (
+			ve          *ebpf.VerifierError
+			verifierLog string
+		)
+		if errors.As(err, &ve) {
+			verifierLog = fmt.Sprintf("Verifier error: %+v\n", ve)
+		}
+
+		log.Fatalf("Failed to load objects: %s\n%+v", verifierLog, err)
 	}
 
 	pfa := &perf.Attr{}
@@ -41,21 +53,51 @@ func main() {
 		log.Fatalf("failed to open perf event: %v", err)
 	}
 
-	perfFd, err := pe.FD()
-	if err != nil {
-		log.Fatalf("failed to get perf event fd: %v", err)
-	}
-	if err = unix.IoctlSetInt(perfFd, unix.PERF_EVENT_IOC_SET_BPF, obj.Cpython310Bt.FD()); err != nil {
-		log.Fatalf("failed to attach bpf program to perf event: %v", err)
-	}
-
-	if err = pe.Enable(); err != nil {
-		log.Fatalf("failed to enable perf event: %v", err)
+	if err := pe.SetBPF(uint32(obj.PerfEventCpython310.FD())); err != nil {
+		log.Fatalf("failed to set bpf program: %v", err)
 	}
 	defer pe.Close()
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 	fmt.Println("Profiling, press ctrl+c to exit...")
-	<-done
+
+	eventsReader, err := ringbuf.NewReader(obj.Ringbuf)
+	if err != nil {
+		log.Printf("Failed to open ringbuf: %+v", err)
+	}
+	defer eventsReader.Close()
+
+	go func() {
+		<-done
+		eventsReader.Close()
+	}()
+
+	for {
+		rec, err := eventsReader.Read()
+		if err != nil {
+			if errors.Is(err, ringbuf.ErrClosed) {
+				return
+			}
+			log.Printf("Failed to read ringbuf: %+v", err)
+			continue
+		}
+
+		var event bpfEvent
+		if err = binary.Read(bytes.NewBuffer(rec.RawSample), binary.LittleEndian, &event); err != nil {
+			log.Printf("Failed to parse ringbuf event: %+v", err)
+			continue
+		}
+
+		println()
+		if event.PythonStackDepth >= 0 {
+			for i := 0; i <= int(event.PythonStackDepth); i++ {
+				fmt.Printf("%s:%s\n",
+					string(event.Filename[i][:event.FilenameLen[i]]),
+					string(event.Funcname[i][:event.FuncnameLen[i]]))
+			}
+		} else {
+			fmt.Printf("0x%x\n", event.Rip)
+		}
+	}
 }

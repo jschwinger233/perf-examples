@@ -11,6 +11,17 @@ import (
 	"github.com/cilium/ebpf"
 )
 
+type bpfEvent struct {
+	Rip              uint64
+	UserMode         uint8
+	PythonStackDepth int8
+	_                [6]byte
+	FilenameLen      [20]uint64
+	FuncnameLen      [20]uint64
+	Filename         [20][100]uint8
+	Funcname         [20][100]uint8
+}
+
 // loadBpf returns the embedded CollectionSpec for bpf.
 func loadBpf() (*ebpf.CollectionSpec, error) {
 	reader := bytes.NewReader(_BpfBytes)
@@ -52,13 +63,15 @@ type bpfSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfProgramSpecs struct {
-	Cpython310Bt *ebpf.ProgramSpec `ebpf:"cpython310_bt"`
+	PerfEventCpython310 *ebpf.ProgramSpec `ebpf:"perf_event_cpython310"`
 }
 
 // bpfMapSpecs contains maps before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
+	Events  *ebpf.MapSpec `ebpf:"events"`
+	Ringbuf *ebpf.MapSpec `ebpf:"ringbuf"`
 }
 
 // bpfObjects contains all objects after they have been loaded into the kernel.
@@ -80,22 +93,27 @@ func (o *bpfObjects) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
+	Events  *ebpf.Map `ebpf:"events"`
+	Ringbuf *ebpf.Map `ebpf:"ringbuf"`
 }
 
 func (m *bpfMaps) Close() error {
-	return _BpfClose()
+	return _BpfClose(
+		m.Events,
+		m.Ringbuf,
+	)
 }
 
 // bpfPrograms contains all programs after they have been loaded into the kernel.
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfPrograms struct {
-	Cpython310Bt *ebpf.Program `ebpf:"cpython310_bt"`
+	PerfEventCpython310 *ebpf.Program `ebpf:"perf_event_cpython310"`
 }
 
 func (p *bpfPrograms) Close() error {
 	return _BpfClose(
-		p.Cpython310Bt,
+		p.PerfEventCpython310,
 	)
 }
 
