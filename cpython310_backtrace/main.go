@@ -5,9 +5,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strconv"
@@ -31,6 +33,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to parse pid: %v", err)
 	}
+	println("Target PID:", targetPid)
 
 	obj := &bpfObjects{}
 	if err := loadBpfObjects(obj, nil); err != nil {
@@ -46,21 +49,30 @@ func main() {
 	}
 
 	pfa := &perf.Attr{}
-	perf.CPUClock.Configure(pfa)
+	perf.CPUCycles.Configure(pfa)
 	pfa.SetSampleFreq(99)
+	pfa.Options.Inherit = true
+	pfa.Options.SampleIDAll = true
+	pfa.SampleFormat.Tid = true
 
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
-	pe, err := perf.Open(pfa, targetPid, perf.AnyCPU, nil)
+	threadIDs, err := listThreadIDs(targetPid)
 	if err != nil {
-		log.Fatalf("failed to open perf event: %v", err)
+		log.Fatalf("failed to list thread IDs: %v", err)
 	}
-
-	if err := pe.SetBPF(uint32(obj.PerfEventCpython310.FD())); err != nil {
-		log.Fatalf("failed to set bpf program: %v", err)
+	for _, threadID := range threadIDs {
+		println("Thread ID:", threadID)
+		pe, err := perf.Open(pfa, threadID, perf.AnyCPU, nil)
+		if err != nil {
+			log.Fatalf("failed to open perf event: %v", err)
+		}
+		if err := pe.SetBPF(uint32(obj.PerfEventCpython310.FD())); err != nil {
+			log.Fatalf("failed to set bpf program: %v", err)
+		}
+		defer pe.Close()
 	}
-	defer pe.Close()
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
@@ -97,7 +109,6 @@ func main() {
 
 		eventDigest := EventDigest{
 			User: event.UserMode == 1,
-			Rip:  event.Rip,
 		}
 
 		if event.PythonStackDepth >= 0 {
@@ -126,4 +137,28 @@ func main() {
 		fmt.Printf("%+v: %d\n\n", digest, digestStats[digest])
 	}
 
+}
+
+func listThreadIDs(pid int) ([]int, error) {
+	// Define the path to the /proc/[PID]/task directory
+	taskDir := filepath.Join("/proc", strconv.Itoa(pid), "task")
+
+	// Open the task directory to read its contents
+	files, err := ioutil.ReadDir(taskDir)
+	if err != nil {
+		return nil, fmt.Errorf("could not read task directory: %v", err)
+	}
+
+	// Iterate through the directory contents and collect thread IDs
+	var threadIDs []int
+	for _, file := range files {
+		if file.IsDir() {
+			tid, err := strconv.Atoi(file.Name())
+			if err == nil {
+				threadIDs = append(threadIDs, tid)
+			}
+		}
+	}
+
+	return threadIDs, nil
 }

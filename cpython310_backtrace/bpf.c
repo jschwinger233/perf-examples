@@ -122,15 +122,14 @@ int perf_event_cpython310(struct bpf_perf_event_data *ctx)
 	}
 
 	for (int i = 0; i < 20; i++) {
+		event->python_stack_depth = i;
 		BPF_PROBE_READ_USER_INTO(&event->filename_len[i], frame, f_code, co_filename, ascii.length);
 		BPF_PROBE_READ_USER_INTO(&event->filename[i], frame, f_code, co_filename, buf);
 		BPF_PROBE_READ_USER_INTO(&event->funcname_len[i], frame, f_code, co_name, ascii.length);
 		BPF_PROBE_READ_USER_INTO(&event->funcname[i], frame, f_code, co_name, buf);
 		frame = BPF_PROBE_READ_USER(frame, f_back);
-		if (!frame) {
-			event->python_stack_depth = i;
+		if (!frame)
 			break;
-		}
 	}
 
 	bpf_ringbuf_output(&ringbuf, event, sizeof(*event), 0);
